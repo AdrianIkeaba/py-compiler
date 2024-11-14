@@ -1,0 +1,124 @@
+{
+    "type": "Program",
+    "statements": [
+        {
+            "FunctionStatement": {
+                "type": "FunctionStatement",
+                "name": {
+                    "type": "IdentifierLiteral",
+                    "value": "main"
+                },
+                "return_type": "int",
+                "parameters": [],
+                "body": {
+                    "type": "BlockStatement",
+                    "statements": [
+                        {
+                            "type": "VariableStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "total_distance"
+                            },
+                            "value": {
+                                "type": "FloatLiteral",
+                                "value": 1.5
+                            },
+                            "value_type": "float"
+                        },
+                        {
+                            "type": "VariableStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "total_students"
+                            },
+                            "value": {
+                                "type": "IntegerLiteral",
+                                "value": 90
+                            },
+                            "value_type": "int"
+                        },
+                        {
+                            "type": "VariableStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "step_length"
+                            },
+                            "value": {
+                                "type": "FloatLiteral",
+                                "value": 0.78
+                            },
+                            "value_type": "float"
+                        },
+                        {
+                            "type": "VariableStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "distance_meters"
+                            },
+                            "value": {
+                                "type": "InfixExpression",
+                                "left_node": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "total_distance"
+                                },
+                                "operator": "*",
+                                "right_node": {
+                                    "type": "IntegerLiteral",
+                                    "value": 1000
+                                }
+                            },
+                            "value_type": "float"
+                        },
+                        {
+                            "type": "VariableStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "total_steps"
+                            },
+                            "value": {
+                                "type": "InfixExpression",
+                                "left_node": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "distance_meters"
+                                },
+                                "operator": "/",
+                                "right_node": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "step_length"
+                                }
+                            },
+                            "value_type": "int"
+                        },
+                        {
+                            "type": "VariableStatement",
+                            "name": {
+                                "type": "IdentifierLiteral",
+                                "value": "avg_steps_per_student"
+                            },
+                            "value": {
+                                "type": "InfixExpression",
+                                "left_node": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "total_steps"
+                                },
+                                "operator": "/",
+                                "right_node": {
+                                    "type": "IdentifierLiteral",
+                                    "value": "total_students"
+                                }
+                            },
+                            "value_type": "int"
+                        },
+                        {
+                            "type": "ReturnStatement",
+                            "return_value": {
+                                "type": "IntegerLiteral",
+                                "value": 0
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}
