@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from tkinter import Variable
 
 
 class NodeType(Enum):
