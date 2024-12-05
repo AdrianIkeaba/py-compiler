@@ -1,3 +1,4 @@
+# Functions as the symbol table for this compiler - Gara 
 from llvmlite import ir
 
 class Environment:
@@ -20,3 +21,4 @@ class Environment:
             return self.parent.__resolve(name)
         else:
             return None
+        
