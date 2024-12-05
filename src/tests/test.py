@@ -1,4 +1,5 @@
 def main() -> float:
+    
     total_distance: float = 1.5
 
     total_students: float = 90.0
