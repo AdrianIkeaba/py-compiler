@@ -4,7 +4,7 @@ from typing import Callable
 from enum import Enum, auto
 
 from AST import Statement, Expression, Program
-from AST import ExpressionStatement, VariableStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement
+from AST import ExpressionStatement, VariableStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement, PrintStatement, Expression
 from AST import InfixExpression, CallExpression
 from AST import IntegerLiteral, FloatLiteral, IdentifierLiteral
 
@@ -142,6 +142,8 @@ class Parser:
                     return self.__parse_assign_statement()  # Parse assignment statement
                 else:
                     return self.__parse_variable_statement()  # Parse variable statement
+            case TokenType.PRINT:
+                return self.__parse_print_statement()
             case TokenType.DEF:
                 return self.__parse_function_statement()  # Parse function statement
             case TokenType.RETURN:
@@ -284,6 +286,22 @@ class Parser:
 
         return stmt  # Return the parsed function statement
 
+    def __parse_print_statement(self) -> PrintStatement:
+        """Parses a print statement."""
+        stmt: PrintStatement = PrintStatement()
+
+        # Move past the 'print' token
+        self.__next_token()
+
+        # Parse the expression to be printed
+        stmt.expr = self.__parse_expression(PrecedenceType.P_LOWEST)
+
+        # Optional: handle newline after print statement
+        while not self.__current_token_is(TokenType.NEWLINE) and not self.__current_token_is(TokenType.EOF):
+            self.__next_token()
+
+        return stmt
+    
     def __parse_return_statement(self) -> ReturnStatement:
         """Parses a return statement."""
         stmt: ReturnStatement = ReturnStatement()  # Create a ReturnStatement node

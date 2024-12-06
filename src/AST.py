@@ -14,6 +14,7 @@ class NodeType(Enum):
     BlockStatement = "BlockStatement"
     ReturnStatement = "ReturnStatement"
     AssignStatement = "AssignStatement"
+    PrintStatement = "PrintStatement"
 
     # Expression
     InfixExpression = "InfixExpression"
@@ -188,6 +189,21 @@ class AssignStatement(Statement):
             "type": self.type().value,
             "identifier": self.identifier.json(),  # Convert the identifier to JSON
             "right_value": self.right_value.json()  # Convert the right-hand side value to JSON
+        }
+class PrintStatement(Statement):
+    def __init__(self, expr: Expression = None) -> None:
+        """Initializes a PrintStatement node with an expression to print."""
+        self.expr = expr
+
+    def type(self) -> NodeType:
+        """Returns the type of the node as NodeType.PrintStatement."""
+        return NodeType.PrintStatement
+
+    def json(self) -> dict:
+        """Returns a JSON representation of the PrintStatement node."""
+        return {
+            "type": self.type().value,
+            "expr": self.expr.json() if self.expr else None
         }
 # End region
 
