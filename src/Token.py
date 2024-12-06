@@ -34,13 +34,14 @@ class TokenType(Enum):
     # Keywords
     RETURN = "RETURN"
     DEF = "DEF"
+    PRINT = "PRINT"
 
     # Typing
     TYPE = "TYPE"
 
 
 
-class Token:
+class Token: #Functionally a test.
     def __init__(self, type: TokenType, literal: Any, line_no: int, position: int) -> None:
         self.type = type
         self.literal = literal
@@ -55,12 +56,13 @@ class Token:
 
 KEYWORDS: dict[str, TokenType] = {
     "def": TokenType.DEF,
-    "return": TokenType.RETURN
+    "return": TokenType.RETURN,
+    "print": TokenType.PRINT
 }
 
 TYPE_KEYWORDS: list[str] = ["int", "float"]
 
-def lookup_identifier(identifier: str) -> TokenType:
+def lookup_identifier(identifier: str) -> TokenType: #Check if identifier (against existing keywords)
     tt: TokenType | None = KEYWORDS.get(identifier)
     if tt is not None:
         return tt

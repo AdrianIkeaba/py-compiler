@@ -106,7 +106,7 @@ def compile_and_run(file_path):
     elif return_type == "str":
         cfunc = CFUNCTYPE(c_char_p)(entry)  # Define C function type for string return
     else:
-        raise ValueError(f"Unsupported return type: {return_type}")  # Raise an error for unsupported return types
+        cfunc = CFUNCTYPE(None)(entry) # Define C function, can handle print statetements or void functions
 
     # Execute and time the function
     st = time.time()  # Start timing the execution

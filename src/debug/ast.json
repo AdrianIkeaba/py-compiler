@@ -8,7 +8,7 @@
                     "type": "IdentifierLiteral",
                     "value": "main"
                 },
-                "return_type": "int",
+                "return_type": "float",
                 "parameters": [],
                 "body": {
                     "type": "BlockStatement",
@@ -32,10 +32,10 @@
                                 "value": "total_students"
                             },
                             "value": {
-                                "type": "IntegerLiteral",
-                                "value": 90
+                                "type": "FloatLiteral",
+                                "value": 90.0
                             },
-                            "value_type": "int"
+                            "value_type": "float"
                         },
                         {
                             "type": "VariableStatement",
@@ -63,8 +63,8 @@
                                 },
                                 "operator": "*",
                                 "right_node": {
-                                    "type": "IntegerLiteral",
-                                    "value": 1000
+                                    "type": "FloatLiteral",
+                                    "value": 1000.0
                                 }
                             },
                             "value_type": "float"
@@ -87,7 +87,7 @@
                                     "value": "step_length"
                                 }
                             },
-                            "value_type": "int"
+                            "value_type": "float"
                         },
                         {
                             "type": "VariableStatement",
@@ -107,13 +107,13 @@
                                     "value": "total_students"
                                 }
                             },
-                            "value_type": "int"
+                            "value_type": "float"
                         },
                         {
                             "type": "ReturnStatement",
                             "return_value": {
-                                "type": "IntegerLiteral",
-                                "value": 0
+                                "type": "IdentifierLiteral",
+                                "value": "avg_steps_per_student"
                             }
                         }
                     ]

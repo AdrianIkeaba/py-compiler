@@ -2,7 +2,7 @@ from llvmlite import ir  # Import LLVM IR types and functionalities
 
 # Import necessary node types and expressions from the Abstract Syntax Tree (AST) module
 from AST import NodeType, Expression, Program, Node
-from AST import ExpressionStatement, VariableStatement, IdentifierLiteral, BlockStatement, FunctionStatement, ReturnStatement, AssignStatement
+from AST import ExpressionStatement, VariableStatement, IdentifierLiteral, BlockStatement, FunctionStatement, ReturnStatement, AssignStatement, PrintStatement, Variable
 from AST import InfixExpression, CallExpression
 from AST import IntegerLiteral, FloatLiteral
 
@@ -45,6 +45,8 @@ class Compiler:
                 self.__visit_block_statement(node)  # Visit block statement
             case NodeType.FunctionStatement:
                 self.__visit_function_statement(node)  # Visit function declaration
+            case NodeType.PrintStatement:
+                self.__visit_print_statement(node)  # Visit print statement
             case NodeType.ReturnStatement:
                 self.__visit_return_statement(node)  # Visit return statement
             case NodeType.AssignStatement:
@@ -101,6 +103,71 @@ class Compiler:
         for stmt in node.statements:  # Iterate through each statement in the block
             self.compile(stmt)  # Compile each statement
 
+    def __visit_print_statement(self, node: PrintStatement) -> None:
+        """Compile a print statement."""
+        # Resolve the expression to be printed
+        value, value_type = self.__resolve_value(node.expr)
+
+        # Debug prints
+        print("Print Statement Debug:")
+        print(f"Value: {value}")
+        print(f"Value Type: {value_type}")
+        print(f"Value Type Class: {type(value_type)}")
+        print(f"Is Float Type: {isinstance(value_type, ir.FloatType)}")
+        # Define a printf-like function if not already defined
+        printf = self.__get_printf_function()
+
+        # Prepare format string and arguments based on type
+        if isinstance(value_type, ir.IntType): #THIS WAS THE ONLY THING THAT WORKED
+            # Create the format string with explicit type and size
+            format_str = ir.Constant(
+            ir.ArrayType(ir.IntType(8), 6),  # Explicitly 6 elements
+            [
+                ir.Constant(ir.IntType(8), ord('%')),
+                ir.Constant(ir.IntType(8), ord('d')),
+                ir.Constant(ir.IntType(8), ord('\n')),
+                ir.Constant(ir.IntType(8), ord('\0')),
+                ir.Constant(ir.IntType(8), 0),  # Padding to reach 6 elements
+                ir.Constant(ir.IntType(8), 0)   # Padding to reach 6 elements
+            ]
+        )
+            args = [value]
+        elif isinstance(value_type, ir.FloatType):
+            # I'VE TRIED SO MANY THINGS BUT FLOATS DONT PRINT
+            # Constructing the format string directly as a constant
+            format_str = ir.Constant(
+                ir.ArrayType(ir.IntType(8), len("%.1f\n")),  # The length of the format string
+                [ir.Constant(ir.IntType(8), ord(c)) for c in "%.1f\n"]
+            )
+            args = [value]
+        else:
+            # Handle other types as needed
+            print(f"Unsupported type for print: {value_type}")
+            return
+
+        # Create a global constant for the format string
+        global_fmt = self.builder.module.globals.get('fmt')
+        if global_fmt is None:
+            global_fmt = ir.GlobalVariable(self.module, format_str.type, 'fmt')
+            global_fmt.global_constant = True
+            global_fmt.initializer = format_str
+
+        # Get a pointer to the first element of the format string
+        fmt_arg = self.builder.bitcast(global_fmt, ir.IntType(8).as_pointer())
+
+        # Call printf with the format string and value
+        self.builder.call(printf, [fmt_arg] + args)
+
+    def __get_printf_function(self) -> ir.Function:
+        """Get or create the printf function in the module."""
+        printf = self.module.globals.get('printf')
+        if printf is None:
+            # Define printf function type
+            printf_type = ir.FunctionType(ir.IntType(32), 
+                                          [ir.IntType(8).as_pointer()], 
+                                          var_arg=True)
+            printf = ir.Function(self.module, printf_type, 'printf')
+        return printf
     def __visit_return_statement(self, node: ReturnStatement) -> None:
         """Visit a return statement node."""
         value: Expression = node.return_value  # Get the return value expression
@@ -247,7 +314,8 @@ class Compiler:
             case NodeType.FloatLiteral:
                 node: FloatLiteral = node
                 value, Type = node.value, self.type_map["float"]
-                return ir.Constant(Type, value), Type
+                #As explicit as possible
+                return ir.Constant(ir.FloatType(), float(node.value)), ir.FloatType()
             case NodeType.IdentifierLiteral:
                 node: IdentifierLiteral = node
                 ptr, Type = self.env.lookup(node.value)
