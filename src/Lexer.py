@@ -1,5 +1,4 @@
 from typing import Any
-
 from Token import Token
 from Token import TokenType
 from Token import lookup_identifier
@@ -7,192 +6,140 @@ from Token import lookup_identifier
 
 class Lexer:
     def __init__(self, source: str) -> None:
-        """
-        Initializes the Lexer with the provided source code.
-
-        Args:
-            source (str): The source code to be tokenized.
-        """
-        self.source = source  # The source code to tokenize
-
-        self.position: int = 0  # Current position in the source code
-        self.read_position: int = 0  # Position to read the next character
-        self.line_no: int = 1  # Current line number
-
-        self.current_char: str | None = None  # Current character being processed
-
-        self.__read_char()  # Read the first character
+        self.source = source
+        self.position: int = 0
+        self.read_position: int = 0
+        self.line_no: int = 1
+        self.current_char: str | None = None
+        self.__read_char()
 
     def __read_char(self) -> None:
-        """
-        Reads the next character from the source code and updates the position.
-        """
         if self.read_position >= len(self.source):
-            self.current_char = None  # End of source
+            self.current_char = None
         else:
-            self.current_char = self.source[self.read_position]  # Get the current character
+            self.current_char = self.source[self.read_position]
 
-        self.position = self.read_position  # Update the current position
-        self.read_position += 1  # Move to the next character
+        self.position = self.read_position
+        self.read_position += 1
 
     def __peek_char(self) -> str | None:
-        """
-        Peeks to the upcoming char without advancing the lexer.
-
-        Returns:
-            str | None: The next character or None if at the end of the source.
-        """
         if self.read_position >= len(self.source):
-            return None  # Return None if at the end of the source
-
-        return self.source[self.read_position]  # Return the next character
+            return None
+        return self.source[self.read_position]
 
     def __skip_whitespace(self) -> None:
-        """
-        Skips whitespace characters in the source code and updates the line number.
-        """
-        while self.current_char in [' ', '\t', '\r']:  # While current character is whitespace
+        while self.current_char in [' ', '\t', '\r']:
             if self.current_char == '\n':
-                self.line_no += 1  # Increment line number on newline
-
-            self.__read_char()  # Read the next character
+                self.line_no += 1
+            self.__read_char()
 
     def __new_token(self, tt: TokenType, literal: Any) -> Token:
-        """
-        Creates a new token with the specified type and literal value.
-
-        Args:
-            tt (TokenType): The type of the token.
-            literal (Any): The literal value of the token.
-
-        Returns:
-            Token: The newly created token.
-        """
         return Token(type=tt, literal=literal, line_no=self.line_no, position=self.position)
 
     def __is_digit(self, ch: str) -> bool:
-        """
-        Checks if the character is a digit.
-
-        Args:
-            ch (str): The character to check.
-
-        Returns:
-            bool: True if the character is a digit, False otherwise.
-        """
-        return '0' <= ch <= '9'  # Check if character is between '0' and '9'
+        return '0' <= ch <= '9'
 
     def __is_letter(self, ch: str) -> bool:
-        """
-        Checks if the character is a letter or underscore.
-
-        Args:
-            ch (str): The character to check.
-
-        Returns:
-            bool: True if the character is a letter or underscore, False otherwise.
-        """
-        return 'a' <= ch <= 'z' or 'A' <= ch <= 'Z' or ch == '_'  # Check for letters and underscore
+        return 'a' <= ch <= 'z' or 'A' <= ch <= 'Z' or ch == '_'
 
     def __read_number(self) -> Token:
-        """
-        Reads a number (integer or float) from the source code.
-
-        Returns:
-            Token: The token representing the number.
-        """
-        start_pos = self.position  # Store the starting position of the number
-        dot_count: int = 0  # Count of decimal points in the number
-
-        output: str = ""  # String to accumulate the number
+        start_pos = self.position
+        dot_count: int = 0
+        output: str = ""
         while self.__is_digit(self.current_char) or self.current_char == '.':
             if self.current_char == '.':
-                dot_count += 1  # Increment dot count for float numbers
-
+                dot_count += 1
             if dot_count > 1:
                 print(f"Too many decimals in number on line {self.line_no}, position {self.position}")
-                return self.__new_token(TokenType.ILLEGAL, self.source[start_pos:self.position])  # Return illegal token
-
-            output += self.source[self.position]  # Append current character to output
-            self.__read_char()  # Read the next character
-
+                return self.__new_token(TokenType.ILLEGAL, self.source[start_pos:self.position])
+            output += self.source[self.position]
+            self.__read_char()
             if self.current_char is None:
-                break  # End of source
+                break
 
-        # Determine if the number is an integer or float based on dot count
         if dot_count == 0:
-            return self.__new_token(TokenType.INT, int(output))  # Return integer token
+            return self.__new_token(TokenType.INT, int(output))
         else:
-            return self.__new_token(TokenType.FLOAT, float(output ))  # Return float token
+            return self.__new_token(TokenType.FLOAT, float(output))
 
     def __read_identifier(self) -> str:
-        """
-        Reads an identifier (variable name) from the source code.
-
-        Returns:
-            str: The identifier string.
-        """
-        position = self.position  # Store the starting position of the identifier
+        position = self.position
         while self.current_char is not None and (self.__is_letter(self.current_char) or self.current_char.isalnum()):
+            self.__read_char()
+        return self.source[position:self.position]
+
+    def __read_string(self) -> Token:
+        start_pos = self.position + 1  # Skip the opening quote
+        output: str = ""
+        self.__read_char()  # Read the character after the opening quote
+
+        while self.current_char is not None and self.current_char != '"':
+            if self.current_char == '\\':  # Handle escape sequences
+                self.__read_char()  # Read the escape character
+                if self.current_char in ['"', '\\', 'n', 't']:
+                    output += self.current_char  # Add the escaped character to output
+                else:
+                    print(f"Illegal escape sequence on line {self.line_no}, position {self.position}")
+                    return self.__new_token(TokenType.ILLEGAL, self.source[start_pos:self.position])
+            else:
+                output += self.current_char  # Add the current character to output
             self.__read_char()  # Read the next character
 
-        return self.source[position:self.position]  # Return the identifier string
+        if self.current_char == '"':  # Closing quote found
+            self.__read_char()  # Read the closing quote
+            return self.__new_token(TokenType.STRING, output)  # Return string token
+        else:
+            print(f"Unterminated string on line {self.line_no}, position {self.position}")
+            return self.__new_token(TokenType.ILLEGAL, self.source[start_pos:self.position])
 
     def next_token(self) -> Token:
-        """
-        Retrieves the next token from the source code.
-
-        Returns:
-            Token: The next token.
-        """
-        tok: Token = None  # Initialize token variable
-
-        self.__skip_whitespace()  # Skip any whitespace characters
-        match self.current_char:  # Match the current character
+        tok: Token = None
+        self.__skip_whitespace()
+        match self.current_char:
             case '+':
-                tok = self.__new_token(TokenType.PLUS, self.current_char)  # Create plus token
+                tok = self.__new_token(TokenType.PLUS, self.current_char)
             case '-':
-                # Handle minus and arrow
                 if self.__peek_char() == ">":
-                    ch = self.current_char  # Store current character
-                    self.__read_char()  # Read the next character
-                    tok = self.__new_token(TokenType.ARROW, ch + self.current_char)  # Create arrow token
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.ARROW, ch + self.current_char)
                 else:
-                    tok = self.__new_token(TokenType.MINUS, self.current_char)  # Create minus token
+                    tok = self.__new_token(TokenType.MINUS, self.current_char)
             case '*':
-                # Handle power and multiplication
                 if self.__peek_char() == "*":
-                    ch = self.current_char  # Store current character
-                    self.__read_char()  # Read the next character
-                    tok = self.__new_token(TokenType.POWER, ch + self.current_char)  # Create power token
+                    ch = self.current_char
+                    self.__read_char()
+                    tok = self.__new_token(TokenType.POWER, ch + self.current_char)
                 else:
-                    tok = self.__new_token(TokenType.ASTERISK, self.current_char)  # Create multiplication token
+                    tok = self.__new_token(TokenType.ASTERISK, self.current_char)
             case '/':
-                tok = self.__new_token(TokenType.SLASH, self.current_char)  # Create division token
+                tok = self.__new_token(TokenType.SLASH, self.current_char)
             case '%':
-                tok = self.__new_token(TokenType.MODULUS, self.current_char)  # Create modulus token
+                tok = self.__new_token(TokenType.MODULUS, self.current_char)
             case '=':
-                tok = self.__new_token(TokenType.EQ, self.current_char)  # Create equality token
+                tok = self.__new_token(TokenType.EQ, self.current_char)
             case ':':
-                tok = self.__new_token(TokenType.COLON, self.current_char)  # Create colon token
+                tok = self.__new_token(TokenType.COLON, self.current_char)
             case '(':
-                tok = self.__new_token(TokenType.LPAREN, self.current_char)  # Create left parenthesis token
+                tok = self.__new_token(TokenType.LPAREN, self.current_char)
             case ')':
-                tok = self.__new_token(TokenType.RPAREN, self.current_char)  # Create right parenthesis token
+                tok = self.__new_token(TokenType.RPAREN, self.current_char)
+            case '"':
+                tok = self.__read_string()  # Call the new method to read a string
             case '\n':
-                tok = self.__new_token(TokenType.NEWLINE, "NEWLINE")  # Create newline token
+                tok = self.__new_token(TokenType.NEWLINE, "NEWLINE")
             case None:
-                tok = self.__new_token(TokenType.EOF, "")  # Create end of file token
+                tok = self.__new_token(TokenType.EOF, "")
             case _:
                 if self.__is_letter(self.current_char):
-                    literal: str = self.__read_identifier()  # Read identifier
-                    tt: TokenType = lookup_identifier(literal)  # Lookup token type for identifier
-                    tok = self.__new_token(tt, literal)  # Create token for identifier
+                    literal: str = self.__read_identifier()
+                    tt: TokenType = lookup_identifier(literal)
+                    tok = self.__new_token(tt, literal)
                     return tok
                 elif self.__is_digit(self.current_char):
-                    return self.__read_number()  # Read number token
+                    return self.__read_number()
                 else:
-                    tok = self.__new_token(TokenType.ILLEGAL, self.current_char)  # Create illegal token
+                    tok = self.__new_token(TokenType.ILLEGAL, self.current_char)
 
-        self.__read_char()  # Read the next character for the next token
-        return tok  # Return the token
+        self.__read_char()
+        return tok

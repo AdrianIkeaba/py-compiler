@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import Any
 
-
 class TokenType(Enum):
     # Special Tokens
     EOF = "EOF"
@@ -34,10 +33,13 @@ class TokenType(Enum):
     # Keywords
     RETURN = "RETURN"
     DEF = "DEF"
+    PRINT = "PRINT"  # Add the PRINT token type for the print keyword
 
     # Typing
     TYPE = "TYPE"
 
+    # String Type
+    STRING = "STRING"
 
 
 class Token:
@@ -53,19 +55,30 @@ class Token:
     def __repr__(self) -> str:
         return str(self)
 
+
+# Keywords mapping
 KEYWORDS: dict[str, TokenType] = {
     "def": TokenType.DEF,
-    "return": TokenType.RETURN
+    "return": TokenType.RETURN,
+    "print": TokenType.PRINT  # Add the print keyword to the keywords mapping
 }
 
+# Type keywords
 TYPE_KEYWORDS: list[str] = ["int", "float"]
 
 def lookup_identifier(identifier: str) -> TokenType:
+    """Looks up the identifier and returns the corresponding TokenType."""
+    # Check for keywords
     tt: TokenType | None = KEYWORDS.get(identifier)
     if tt is not None:
         return tt
 
+    # Check for type keywords
     if identifier in TYPE_KEYWORDS:
         return TokenType.TYPE
 
-    return TokenType.IDENTIFIER
+    # Check for string literals (assuming strings are enclosed in quotes)
+    if identifier.startswith('"') and identifier.endswith('"'):
+        return TokenType.STRING
+
+    return TokenType.IDENTIFIER  # Default to IDENTIFIER for non-keywords

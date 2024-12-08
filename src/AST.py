@@ -13,6 +13,7 @@ class NodeType(Enum):
     BlockStatement = "BlockStatement"
     ReturnStatement = "ReturnStatement"
     AssignStatement = "AssignStatement"
+    PrintStatement = "PrintStatement"  # Add PrintStatement type
 
     # Expression
     InfixExpression = "InfixExpression"
@@ -22,6 +23,7 @@ class NodeType(Enum):
     IntegerLiteral = "IntegerLiteral"
     FloatLiteral = "FloatLiteral"
     IdentifierLiteral = "IdentifierLiteral"
+    StringLiteral = "StringLiteral"  # Add StringLiteral type
 
 
 class Node(ABC):
@@ -75,6 +77,22 @@ class ExpressionStatement(Statement):
         return {
             "type": self.type().value,
             "expr": self.expr.json()  # Convert the expression to JSON
+        }
+
+class PrintStatement(Statement):
+    def __init__(self, value: Expression) -> None:
+        """Initializes a PrintStatement node with a value to print."""
+        self.value = value  # The value to be printed
+
+    def type(self) -> NodeType:
+        """Returns the type of the node as NodeType.PrintStatement."""
+        return NodeType.PrintStatement
+
+    def json(self) -> dict:
+        """Returns a JSON representation of the PrintStatement node."""
+        return {
+            "type": self.type().value,
+            "value": self.value.json()  # Convert the value to JSON
         }
 
 class CallExpression(Expression):
@@ -193,7 +211,7 @@ class AssignStatement(Statement):
 
 # Expression Region
 class InfixExpression(Expression):
-    def __init__(self, left_node: Expression, operator: str, right_node = None) -> None:
+    def __init__(self, left_node: Expression, operator: str, right_node: Expression = None) -> None:
         """Initializes an InfixExpression node with left and right operands and an operator."""
         self.left_node: Expression = left_node  # The left operand
         self.operator: str = operator  # The operator (e.g., +, -, *, /)
@@ -209,9 +227,8 @@ class InfixExpression(Expression):
             "type": self.type().value,
             "left_node": self.left_node.json(),  # Convert the left operand to JSON
             "operator": self.operator,  # Include the operator
-            "right_node": self.right_node.json()  # Convert the right operand to JSON
+            "right_node": self.right_node.json() if self.right_node else None  # Convert the right operand to JSON
         }
-
 # End region
 
 
@@ -264,4 +281,19 @@ class IdentifierLiteral(Expression):
             "type": self.type().value,
             "value": self.value  # Include the identifier value
         }
-# End region
+
+class StringLiteral(Expression):
+    def __init__(self, value: str = None) -> None:
+        """Initializes a StringLiteral node with a value."""
+        self.value: str = value  # The string value
+
+    def type(self) -> NodeType:
+        """Returns the type of the node as NodeType.StringLiteral."""
+        return NodeType.StringLiteral
+
+    def json(self) -> dict:
+        """Returns a JSON representation of the StringLiteral node."""
+        return {
+            "type": self.type().value,
+            "value": self.value  # Include the string value
+        }

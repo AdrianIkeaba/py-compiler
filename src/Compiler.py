@@ -2,9 +2,9 @@ from llvmlite import ir  # Import LLVM IR types and functionalities
 
 # Import necessary node types and expressions from the Abstract Syntax Tree (AST) module
 from AST import NodeType, Expression, Program, Node
-from AST import ExpressionStatement, VariableStatement, IdentifierLiteral, BlockStatement, FunctionStatement, ReturnStatement, AssignStatement
+from AST import ExpressionStatement, VariableStatement, IdentifierLiteral, BlockStatement, FunctionStatement, ReturnStatement, AssignStatement, PrintStatement
 from AST import InfixExpression, CallExpression
-from AST import IntegerLiteral, FloatLiteral
+from AST import IntegerLiteral, FloatLiteral, StringLiteral
 
 from Environment import Environment  # Import the Environment class for symbol table management
 
@@ -17,6 +17,7 @@ class Compiler:
         self.type_map: dict[str, ir.Type] = {
             'int': ir.IntType(32),  # 32-bit integer type
             'float': ir.FloatType(),  # Floating-point type
+            'str': ir.PointerType(ir.IntType(8)),  # Pointer to a string (char*)
         }
 
         # Create an LLVM module named 'main' to hold the compiled code
@@ -49,12 +50,30 @@ class Compiler:
                 self.__visit_return_statement(node)  # Visit return statement
             case NodeType.AssignStatement:
                 self.__visit_assign_statement(node)  # Visit assignment statement
+            case NodeType.PrintStatement:
+                self.__visit_print_statement(node)  # Visit print statement
 
             case NodeType.InfixExpression:
                 self.__visit_infix_expression(node)  # Visit infix expression
             case NodeType.CallExpression:
                 self.__visit_call_expression(node)  # Visit function call expression
 
+    def __visit_print_statement(self, node: PrintStatement) -> None:
+        """Visit a print statement node."""
+        value: Expression = node.value  # Get the value to print
+        value, value_type = self.__resolve_value(value)  # Resolve the value to its LLVM representation
+
+        # Create a format string for printing
+        format_str = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), len("%s\n") + 1), "format_str")
+        format_str.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), len("%s\n") + 1), bytearray(b"%s\n"))
+        format_str_ptr = self.builder.bitcast(format_str, self.type_map['str'])  # Cast to the correct type
+
+        # Call the printf function from the C standard library
+        printf_type = ir.FunctionType(ir.IntType(32), [self.type_map['str'], self.type_map['str']])
+        printf_func = ir.Function(self.module, printf_type, "printf")
+
+        # Call the printf function with the format string and the value to print
+        self.builder.call(printf_func, [format_str_ptr, value])
     def __visit_program(self, node: Program) -> None:
         """Visit a program node and compile its statements."""
         for stmt in node.statements:  # Iterate through each statement in the program
@@ -248,6 +267,13 @@ class Compiler:
                 node: FloatLiteral = node
                 value, Type = node.value, self.type_map["float"]
                 return ir.Constant(Type, value), Type
+            case NodeType.StringLiteral:
+                node: StringLiteral = node
+                value = node.value.encode('utf-8')  # Encode the string to bytes
+                string_length = len(value) + 1  # Include null terminator
+                string_type = ir.ArrayType(ir.IntType(8), string_length)
+                string_constant = ir.Constant(string_type, bytearray(value + b'\0'))  # Create a constant string
+                return string_constant, self.type_map['str']
             case NodeType.IdentifierLiteral:
                 node: IdentifierLiteral = node
                 ptr, Type = self.env.lookup(node.value)
@@ -264,7 +290,7 @@ class Compiler:
             func = self.module.globals[function_name]
             if isinstance(func, ir.Function):
                 return_type = func.function_type.return_type
-                if isinstance(return_type, ir.IntType):
+                if isinstance (return_type, ir.IntType):
                     return "int"
                 elif isinstance(return_type, ir.FloatType):
                     return "float"
@@ -272,4 +298,4 @@ class Compiler:
                     return "bool"
                 elif isinstance(return_type, (ir.PointerType, ir.ArrayType)):
                     return "str"
-        return "unknown"
+        return "unknown"  # Return unknown if the function is not found or has an unrecognized type

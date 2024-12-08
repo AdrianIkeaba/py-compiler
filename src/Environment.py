@@ -1,8 +1,8 @@
-# This class serves as the symbol table for the compiler, managing variable definitions and scopes - Gara 
+# This class serves as the symbol table for the compiler, managing variable definitions and scopes
 from llvmlite import ir  # Import LLVM IR types for value and type representation
 
 class Environment:
-    def __init__(self, records: dict[str, tuple[ir.Value, ir.Type]] = None, parent = None, name: str = "global") -> None:
+    def __init__(self, records: dict[str, tuple[ir.Value, ir.Type]] = None, parent=None, name: str = "global") -> None:
         """
         Initialize the Environment with an optional set of records, a parent environment, and a name.
         
@@ -12,7 +12,7 @@ class Environment:
             name (str): The name of this environment, defaulting to "global".
         """
         # If no records are provided, initialize an empty dictionary to hold variable definitions.
-        self.records: dict[str, tuple] = records if records else {}
+        self.records: dict[str, tuple[ir.Value, ir.Type]] = records if records else {}
         self.parent = parent  # Set the parent environment for scope resolution.
         self.name: str = name  # Name of the environment, useful for debugging.
 

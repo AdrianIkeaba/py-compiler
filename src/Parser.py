@@ -6,7 +6,7 @@ from enum import Enum, auto
 from AST import Statement, Expression, Program
 from AST import ExpressionStatement, VariableStatement, FunctionStatement, ReturnStatement, BlockStatement, AssignStatement
 from AST import InfixExpression, CallExpression
-from AST import IntegerLiteral, FloatLiteral, IdentifierLiteral
+from AST import IntegerLiteral, FloatLiteral, IdentifierLiteral, StringLiteral  # Import StringLiteral
 
 class PrecedenceType(Enum):
     # Enum representing the precedence levels of different operations
@@ -29,6 +29,7 @@ PRECEDENCES: dict[TokenType, PrecedenceType] =  {
     TokenType.MODULUS: PrecedenceType.P_PRODUCT,
     TokenType.POWER: PrecedenceType.P_EXPONENT,
     TokenType.LPAREN: PrecedenceType.P_CALL,
+    TokenType.STRING: PrecedenceType.P_LOWEST,  # Add precedence for strings
 }
 
 class Parser:
@@ -46,6 +47,7 @@ class Parser:
             TokenType.IDENTIFIER: self.__parse_identifier,
             TokenType.INT: self.__parse_int_literal,
             TokenType.FLOAT: self.__parse_float_literal,
+            TokenType.STRING: self.__parse_string_literal,  # Add string literal parsing
             TokenType.LPAREN: self.__parse_grouped_expression,
         }
         # Mapping of infix parse functions for different token types
@@ -62,7 +64,6 @@ class Parser:
         # Initialize the current and peek tokens
         self.__next_token()
         self.__next_token()
-
 
     # Parse helpers region
     def __next_token(self) -> None:
@@ -97,13 +98,13 @@ class Parser:
     def __peek_precedence(self) -> PrecedenceType:
         """Returns the precedence of the peek token."""
         prec: int | None = PRECEDENCES.get(self.peek_token.type)
-        if prec is None:
+        if prec is None :
             return PrecedenceType.P_LOWEST  # Default to lowest precedence
         return prec
 
     def __peek_error(self, tt: TokenType) -> None:
         """Logs an error if the expected token is not found."""
-        self.errors.append(f"Expected next token {tt}, got {self.peek_token .type}")
+        self.errors.append(f"Expected next token {tt}, got {self.peek_token.type}")
 
     def __no_prefix_parse_fn_error(self, tt: TokenType):
         """Logs an error if no prefix parse function is found for the current token type."""
@@ -111,7 +112,7 @@ class Parser:
 
     # end region
 
-    def parse_program(self) -> None:
+    def parse_program(self) -> Program:
         """Parses the entire program and returns a Program node."""
         program: Program = Program()  # Create a new Program node
 
@@ -149,7 +150,7 @@ class Parser:
             case _:
                 return self.__parse_expression_statement()  # Parse expression statement
 
-# Parse expression methods
+    # Parse expression methods
     def __parse_expression_statement(self) -> ExpressionStatement:
         """Parses an expression statement."""
         expr = self.__parse_expression(PrecedenceType.P_LOWEST)  # Parse the expression
@@ -213,7 +214,7 @@ class Parser:
         return infix_expr  # Return the infix expression
 
     def __parse_call_expression(self, function: Expression) -> CallExpression:
-        """ Parses a function call expression with its arguments."""
+        """Parses a function call expression with its arguments."""
         expr: CallExpression = CallExpression(function=function)  # Create a CallExpression node
         expr.arguments = []  # Initialize the arguments list (TODO: implement argument parsing)
 
@@ -222,7 +223,7 @@ class Parser:
 
         return expr  # Return the parsed call expression
 
-# End Region
+    # End Region
 
     def __parse_variable_statement(self) -> VariableStatement:
         """Parses a variable declaration statement."""
@@ -302,7 +303,6 @@ class Parser:
         block_stmt: BlockStatement = BlockStatement()  # Create a BlockStatement node
 
         self.__next_token()  # Advance to the first statement in the block
-
         while not self.__current_token_is(TokenType.EOF):
             stmt: Statement = self.__parse_statement()  # Parse a statement
             if stmt is not None:
@@ -327,13 +327,15 @@ class Parser:
 
         return stmt  # Return the parsed assignment statement
 
-
     # Prefix Methods
 
     def __parse_identifier(self) -> Expression:
         """Parses an identifier and returns an IdentifierLiteral node."""
         return IdentifierLiteral(self.current_token.literal)  # Return the identifier as a node
 
+    def __parse_string_literal(self) -> Expression:
+        """Parses a StringLiteral node from the current token."""
+        return StringLiteral(self.current_token.literal)  # Return the string literal as a node
 
     def __parse_int_literal(self) -> Expression:
         """Parses an IntegerLiteral node from the current token."""
@@ -358,4 +360,3 @@ class Parser:
             return None
 
         return float_lit  # Return the parsed float literal
-    # Region end
